@@ -21,6 +21,10 @@
 
 # credentials
 credentials.json
+credentials.base64
+.env
+.env.*
+!.env.example
 config.json
 
 # logs
