@@ -1,0 +1,217 @@
+/* QRScreen.css */
+:root {
+  --background: #000000;
+  --surface: #111111;
+  --primary: #10b981;
+  --primary-glow: rgba(16, 185, 129, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+.main-container {
+  min-height: 100vh;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+  opacity: 0;
+  animation: fadeIn 0.8s ease-out forwards 0.4s;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 500px;
+  animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.loading {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  animation: pulse 2s infinite;
+}
+
+.qr-display {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 2.5rem;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+/* QR Container with shine effect */
+.qr-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.qr-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(16, 185, 129, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: qrShine 3s infinite;
+}
+
+.qr-instructions {
+  text-align: center;
+}
+
+.qr-info {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.folder-info {
+  display: block;
+  color: var(--primary);
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.reset-button {
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.reset-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: buttonShine 3s infinite;
+}
+
+.reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes qrShine {
+  0% { transform: rotate(45deg) translateY(-100%); }
+  10%, 100% { transform: rotate(45deg) translateY(100%); }
+}
+
+@keyframes buttonShine {
+  0% { transform: rotate(45deg) translateY(-100%); }
+  10%, 100% { transform: rotate(45deg) translateY(100%); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .main-container {
+    padding: 2rem 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .qr-display {
+    padding: 1.5rem;
+  }
+
+  .qr-container {
+    padding: 1rem;
+  }
+
+  .reset-button {
+    width: 100%;
+  }
+}
