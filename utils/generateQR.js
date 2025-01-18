@@ -2,6 +2,32 @@
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+const { Storage } = require('@google-cloud/storage');
+
+const initializeStorage = () => {
+  try {
+    // Prioritize base64 credentials for production
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
+      const credentials = JSON.parse(
+        Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64, 'base64').toString()
+      );
+      return new Storage({ 
+        credentials,
+        projectId: credentials.project_id 
+      });
+    }
+    
+    // Development fallback
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      return new Storage();
+    }
+    
+    throw new Error('Google Cloud credentials not found in environment');
+  } catch (error) {
+    console.error('Failed to initialize Google Cloud Storage:', error);
+    throw error;
+  }
+};
 
 async function generateQRCodes() {
   // Create QR codes directory if it doesn't exist

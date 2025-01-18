@@ -18,7 +18,7 @@ const ReviewScreen = () => {
       formData.append('name', name);
       formData.append('folder', folder);
 
-      await axios.post('http://localhost:5000/api/upload', formData);
+      await axios.post('https://pix-qr.vercel.app/api/upload', formData);
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Upload failed:', error);

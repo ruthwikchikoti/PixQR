@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { CameraIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid';
 import toast, { Toaster } from 'react-hot-toast';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const MobileUpload = () => {
   const { folder, count } = useParams();
