@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://pix-qr.vercel.app';
+
 const ReviewScreen = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ const ReviewScreen = () => {
       formData.append('name', name);
       formData.append('folder', folder);
 
-      await axios.post('https://pix-qr.vercel.app/api/upload', formData);
+      await axios.post(`${API_URL}/api/upload`, formData);
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Upload failed:', error);

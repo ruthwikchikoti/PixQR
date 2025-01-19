@@ -3,38 +3,42 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-function cleanBase64String(str) {
-  // Remove whitespace, newlines and any unwanted characters
-  return str.replace(/[\n\r\s]/g, '');
+function getCredentialsFromEnv() {
+  return {
+    type: process.env.GOOGLE_APPLICATION_CREDENTIALS_TYPE,
+    project_id: process.env.GOOGLE_APPLICATION_CREDENTIALS_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_APPLICATION_CREDENTIALS_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_APPLICATION_CREDENTIALS_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    client_email: process.env.GOOGLE_APPLICATION_CREDENTIALS_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_APPLICATION_CREDENTIALS_CLIENT_ID,
+    auth_uri: process.env.GOOGLE_APPLICATION_CREDENTIALS_AUTH_URI,
+    token_uri: process.env.GOOGLE_APPLICATION_CREDENTIALS_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.GOOGLE_APPLICATION_CREDENTIALS_AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.GOOGLE_APPLICATION_CREDENTIALS_CLIENT_X509_CERT_URL
+  };
+
 }
+console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS_PRIVATE_KEY);
 
-function validateAndParseCredentials() {
+async function initializeGoogleDrive() {
   try {
-    const base64Creds = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
-    if (!base64Creds) {
-      throw new Error('Missing GOOGLE_APPLICATION_CREDENTIALS_BASE64');
-    }
+    const credentials = getCredentialsFromEnv();
 
-    const cleanCreds = cleanBase64String(base64Creds);
-    const decodedCreds = Buffer.from(cleanCreds, 'base64').toString();
-    
-    try {
-      const parsedCreds = JSON.parse(decodedCreds);
-      console.log('Credentials parsed successfully');
-      return parsedCreds;
-    } catch (parseError) {
-      console.error('Failed to parse JSON:', parseError);
-      throw new Error('Invalid JSON in credentials');
-    }
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive'] // Changed to full drive scope
+    });
+
+    return google.drive({ version: 'v3', auth });
   } catch (error) {
-    console.error('Credential validation error:', error);
+    console.error('Drive initialization error:', error);
     throw error;
   }
 }
 
 async function createDriveFolders() {
   try {
-    const credentials = validateAndParseCredentials();
+    const credentials = getCredentialsFromEnv();
     
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -92,11 +96,75 @@ async function createDriveFolders() {
   }
 }
 
+async function uploadHandler(req, res) {
+  return new Promise((resolve, reject) => {
+    upload(req, res, async function(err) {
+      try {
+        if (err) {
+          console.error('Multer error:', err);
+          return res.status(400).json({ error: err.message });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        if (!req.body.folder) {
+          return res.status(400).json({ error: 'No folder specified' });
+        }
+
+        const drive = await initializeGoogleDrive();
+        const folderId = getFolderId(req.body.folder);
+
+        const fileMetadata = {
+          name: req.body.fileName || req.file.originalname,
+          parents: [folderId]
+        };
+
+        const media = {
+          mimeType: req.file.mimetype,
+          body: Buffer.from(req.file.buffer)
+        };
+
+        const file = await drive.files.create({
+          resource: fileMetadata,
+          media: media,
+          fields: 'id,webViewLink',
+          supportsAllDrives: true
+        });
+
+        // Set file permissions to anyone with the link can view
+        await drive.permissions.create({
+          fileId: file.data.id,
+          requestBody: {
+            role: 'reader',
+            type: 'anyone'
+          }
+        });
+
+        console.log(`File uploaded successfully: ${file.data.id}`);
+        res.json({
+          success: true,
+          fileId: file.data.id,
+          viewLink: file.data.webViewLink
+        });
+      } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ 
+          error: 'Upload failed',
+          details: error.message,
+          stack: error.stack
+        });
+      }
+    });
+  });
+}
+
 // Debug mode to check credentials first
 if (require.main === module) {
   try {
     console.log('Validating credentials...');
-    validateAndParseCredentials();
+    getCredentialsFromEnv();
     console.log('Credentials are valid, creating folders...');
     createDriveFolders();
   } catch (error) {
@@ -105,4 +173,6 @@ if (require.main === module) {
   }
 }
 
-module.exports = { createDriveFolders };
+module.exports = { 
+  createDriveFolders
+};

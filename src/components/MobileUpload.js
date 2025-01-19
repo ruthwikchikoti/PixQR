@@ -4,7 +4,11 @@ import { useParams } from 'react-router-dom';
 import { CameraIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid';
 import toast, { Toaster } from 'react-hot-toast';
 
-const API_URL = process.env.REACT_APP_API_URL;
+// Update API URL handling
+const API_URL = process.env.REACT_APP_API_URL || 'http://10.51.2.175:5000';
+
+// Log the API URL for debugging
+console.log('Using API URL:', API_URL);
 
 const MobileUpload = () => {
   const { folder, count } = useParams();
@@ -92,6 +96,13 @@ const MobileUpload = () => {
             const result = await response.json();
             throw new Error(result.error || `Failed to upload image ${i + 1}`);
           }
+
+          const uploadResult = await response.json();
+          console.log('Upload success:', {
+            file: fileName,
+            driveId: uploadResult.driveId,
+            webViewLink: uploadResult.webViewLink
+          });
 
           toast.loading(`Uploading image ${i + 1}/${images.length}`, { id: uploadToast });
           setUploadProgress(((i + 1) / images.length) * 100);

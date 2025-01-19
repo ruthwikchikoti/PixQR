@@ -1,3 +1,4 @@
+require('dotenv').config();
 // server/index.js
 const express = require('express');
 const cors = require('cors');
@@ -9,7 +10,13 @@ const { uploadToDrive } = require('./driveService');
 
 const app = express();
 
-app.use(cors());
+// Update CORS configuration
+app.use(cors({
+  origin: ['http://10.51.2.175:3000', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST']
+}));
+
 app.use(express.json());
 app.use(express.static('build')); 
 
@@ -91,20 +98,30 @@ app.post('/api/upload', (req, res) => {
         folderName: folder,
         imageNumber,
         file: finalFileName,
-        size: file.size
+        size: file.size,
+        path: file.path
       });
 
-      const result = await uploadToDrive(file.path, finalFileName, folder);
+      const result = await uploadToDrive(file.path, finalFileName, folder).catch(error => {
+        console.error('Drive upload error:', error);
+        throw new Error(`Drive upload failed: ${error.message}`);
+      });
       
       if (!result || !result.id) {
+        console.error('No result from Drive upload');
         throw new Error('Drive upload failed - no file ID returned');
       }
 
-      await fs.promises.unlink(file.path);
+      await fs.promises.unlink(file.path).catch(error => {
+        console.warn('Failed to delete temp file:', error);
+        // Don't throw here, continue with the response
+      });
 
       const userFolder = path.join(uploadsDir, name);
       if (fs.existsSync(userFolder)) {
-        await fs.promises.rm(userFolder, { recursive: true });
+        await fs.promises.rm(userFolder, { recursive: true }).catch(error => {
+          console.warn('Failed to clean up user folder:', error);
+        });
       }
 
       res.json({ 
@@ -114,22 +131,30 @@ app.post('/api/upload', (req, res) => {
         webViewLink: result.webViewLink
       });
     } catch (error) {
-      console.error('Upload error:', error);
-      if (req.file?.path) {
+      console.error('Upload process error:', {
+        message: error.message,
+        stack: error.stack,
+        details: error
+      });
+      
+      if (req.file?.path && fs.existsSync(req.file.path)) {
         try {
           await fs.promises.unlink(req.file.path);
         } catch (cleanupError) {
           console.error('Failed to clean up file:', cleanupError);
         }
       }
+
       res.status(500).json({ 
-        error: `Upload failed: ${error.message}`
+        error: 'Upload failed',
+        details: error.message,
+        code: error.code || 'UPLOAD_ERROR'
       });
     }
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.SERVER_PORT || process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
